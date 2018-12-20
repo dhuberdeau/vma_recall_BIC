@@ -27,7 +27,8 @@ dev_list = Screen('VideoCaptureDevices');
 grabber = Screen('OpenVideoCapture', win, dev_list(5).DeviceIndex);
 Screen('StartVideoCapture', grabber, 60, 1);
 RMIN = 0;
-RMAX = .025;
+% RMAX = .025;
+RMAX = 0.08;
 SUBWIN_SIZE = 75;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 
@@ -53,8 +54,8 @@ while(~keyIsDown)
         img_ = imtext(:, max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]), max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]));
         img = permute(img_([3 2 1], :, :), [3 2 1]);
         c_r = rgb2hsv(img);
-        im_r = c_r(:,:,3) > REFL_TH;
-    %     im_r = inRange(c_r, [RMAX 1 1], [RMIN 0.5 0.5]);
+%         im_r = c_r(:,:,3) > REFL_TH;
+        im_r = inRange(c_r, [RMAX 1 1], [RMIN 0.5 0.5]);
         rel_ind2 = ind2(max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]),max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]));
         rel_ind1 = ind1(max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]),max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]));
         trk_y_r = median(rel_ind1(im_r))*screen_dims(1)/res1;

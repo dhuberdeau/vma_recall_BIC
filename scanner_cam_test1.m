@@ -22,7 +22,7 @@ Screen('StartVideoCapture', grabber, 60, 1);
 keyIsDown = 0;
 
 while(~keyIsDown)
-    [ keyIsDown, keyTime, keyCode ] = KbCheck; 
+    [ keyIsDown, keyTime, keyCode ] = KbCheck;   
     [tex, pts, nrdropped, imtext] = Screen('GetCapturedImage', win, grabber, 1, [], 2);
     Screen('DrawTexture', win, tex);
     Screen('Flip', win)
@@ -37,4 +37,6 @@ if exist('grabber')
     Screen('StopVideoCapture', grabber);
     Screen('CloseVideoCapture', grabber);
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTUREclearclear

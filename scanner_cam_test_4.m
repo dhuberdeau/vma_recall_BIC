@@ -30,7 +30,8 @@ dev_list = Screen('VideoCaptureDevices');
 grabber = Screen('OpenVideoCapture', win, dev_list(5).DeviceIndex);
 Screen('StartVideoCapture', grabber, 60, 1);
 RMIN = 0;
-RMAX = .025;
+% RMAX = .025;
+RMAX = 0.08;
 SUBWIN_SIZE = 75;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 
