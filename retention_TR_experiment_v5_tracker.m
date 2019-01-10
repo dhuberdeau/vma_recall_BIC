@@ -8,28 +8,32 @@ AssertOpenGL;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 
 TEST_ROOM_CAMERA = 0;
-SKIP_TRIGS = 0;
+SKIP_TRIGS = 1;
 % for live scanning, set both of above to 0.
 
 if TEST_ROOM_CAMERA
     screen_dims = [1920, 1080];
 else
-    screen_dims = [1920, 1080];
+%     screen_dims = [1920, 1080]; % MRRC
+    screen_dims = [3840, 2160]; %BIC
 end
 
 home_position = screen_dims/2;
-TARG_LEN = 200;
+TARG_LEN = 600;
 % targ_angles = 15+(0:60:300);
 targ_angles = 0:90:300;
-targ_coords_base = TARG_LEN*[cosd(targ_angles)', sind(targ_angles)'] + home_position;
+targ_coords_base = TARG_LEN*[cosd(targ_angles)', sind(targ_angles)'] ...
+    + repmat(home_position, length(targ_angles), 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 if TEST_ROOM_CAMERA
     res1 = 1920;
     res2 = 1080;
 else
-    res1 = 1280;
-    res2 = 1024;
+%     res1 = 1280;
+%     res2 = 1024; %MRRC
+    res1 = 1920;
+    res2 = 1080; %BIC 
 end
 % res1 = 1920;
 % res2 = 1080;
@@ -37,14 +41,14 @@ if TEST_ROOM_CAMERA
     DISC_SIZE = 40;
 else
 %     DISC_SIZE = 32;
-    DISC_SIZE = 4;
+    DISC_SIZE = 8;
 end
 screen_dim1 = screen_dims(1);
 screen_dim2 = screen_dims(2);
 REFL_TH = .55;
 
-load('camera_params');
-load('mm_per_pix');
+load('camera_params_BIC_cam');
+load('mm_per_pix_BIC_cam');
 try
     load('camera_angle_calibration.mat');
     c_rr = cosd(angle_error);
@@ -56,12 +60,13 @@ end
 
 ind1_d = repmat((1:DISC_SIZE:res2)', 1, res1/DISC_SIZE);
 ind2_d = repmat((1:DISC_SIZE:res1), res2/DISC_SIZE, 1);
-SUBWIN_SIZE = 75;
+SUBWIN_SIZE = 150;
 ind1 = repmat((1:res2)', 1, res1);
 ind2 = repmat((1:res1), res2, 1);
 
 RMIN = 0;
-RMAX = .025;
+% RMAX = .025;
+RMAX = 0.08;
 
 pre_alloc_samps = 36000; %enough for 10 minute blocks
 pre_alloc_trial = 60*60; %enough for 1 min.
@@ -118,9 +123,9 @@ bubble_end_diam = TARG_LEN;
 bubble_expand_rate = 400;
 
 %% full session - ramped pPT
-SUB_NUM_ = 'dmh_test_10262018_';
+SUB_NUM_ = 'dmh_test_01102019_';
 % [trial_target_numbers_MASTER, trial_type_MASTER, prescribed_PT_MASTER, ret_MASTER, ITI_MASTER, stim_wait_MASTER] = generate_trial_table_E1retention_fMRI_v1(SUB_NUM_);
-load('trial_parameters_dmh_test_10262018.mat')
+load('trial_parameters_trial_params_jeff_pilot_08312018.mat')
 trial_target_numbers_MASTER = trial_target_numbers;
 trial_type_MASTER = trial_type;
 prescribed_PT_MASTER = prescribed_PT;
@@ -132,10 +137,10 @@ screens=Screen('Screens');
 screenNumber=max(screens);
 [win, rect] = Screen('OpenWindow', screenNumber, 0); %[0 0 1600 900]);
 
-for block_num = 5
+for block_num = 1
     switch block_num
         case 1
-            this_trials = 1:24;
+            this_trials = 1:4;
             trial_type = trial_type_MASTER(this_trials);
             trial_target_numbers = trial_target_numbers_MASTER(this_trials);
             prescribed_PT = prescribed_PT_MASTER(this_trials);
@@ -329,7 +334,8 @@ for block_num = 5
                 if TEST_ROOM_CAMERA
                     im_r = inRange(b, [RMAX 1 1], [RMIN 0.5 0.5]);
                 else
-                    im_r = b(:,:,3) > REFL_TH;
+%                     im_r = b(:,:,3) > REFL_TH; %MRRC camera
+                    im_r = inRange(b, [RMAX 1 1], [RMIN 0.5 0.5]);
                 end
                 trk_y_rd = round(median(ind1_d(im_r)));
                 trk_x_rd = round(median(ind2_d(im_r)));
@@ -344,7 +350,8 @@ for block_num = 5
                     if TEST_ROOM_CAMERA
                         im_r = inRange(c_r, [.02 1 1], [0 0.5 0.5]);
                     else
-                        im_r = c_r(:,:,3) > REFL_TH;
+%                         im_r = c_r(:,:,3) > REFL_TH; 
+                        im_r = inRange(c_r, [RMAX 1 1], [RMIN 0.5 0.5]);
                     end
                     
                     rel_ind2 = ind2(max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]),max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]));

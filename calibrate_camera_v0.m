@@ -8,8 +8,8 @@ sqr_size = 17.5;
 % I5 = imread('checkerboard_5.jpg');
 % I6 = imread('checkerboard_6.jpg');
 I1 = imread('board_1.jpg');
-I2 = imread('board_3.jpg');
-I3 = imread('board_4.jpg');
+I2 = imread('board_2.jpg');
+I3 = imread('board_3.jpg');
 
 
 % [im_pts0, board_size] = detectCheckerboardPoints(I1);
@@ -28,7 +28,8 @@ im_pts = cat(3, im_pts1, cat(3, im_pts2, im_pts3))
 
 world_pts = generateCheckerboardPoints(board_size, sqr_size);
 
-camera_params = estimateCameraParameters(im_pts, world_pts, 'ImageSize', [size(I1,1), size(I1,2)]);
+% camera_params = estimateCameraParameters(im_pts, world_pts, 'ImageSize', [size(I1,1), size(I1,2)]);
+camera_params = estimateCameraParameters(im_pts, world_pts);
 
 I_calib = undistortImage(I1, camera_params);
 

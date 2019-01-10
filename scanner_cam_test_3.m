@@ -2,12 +2,13 @@
 AssertOpenGL;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 % screen_dims = [1920, 1080];
-screen_dims = [1600 900];
-res1 = 1280;%1920;
-res2 = 1024;%1080;
+% screen_dims = [1600 900];
+screen_dims = [3840 2160]; %for BIC setup
+res1 = 1920;
+res2 = 1080; % for BIC setup
 ind1 = repmat((1:res2)', 1, res1);
 ind2 = repmat((1:res1), res2, 1);
-DISC_SIZE = 32;
+DISC_SIZE = 8;
 REFL_TH = .55;
 
 ind1_d = repmat((1:DISC_SIZE:res2)', 1, res1/DISC_SIZE);
@@ -29,7 +30,7 @@ Screen('StartVideoCapture', grabber, 60, 1);
 RMIN = 0;
 % RMAX = .025;
 RMAX = 0.08;
-SUBWIN_SIZE = 75;
+SUBWIN_SIZE = 200;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
@@ -45,8 +46,8 @@ while(~keyIsDown)
     img = permute(img_([3,2,1], :,:), [3,2,1]);
     b = rgb2hsv(img);
 
-    im_r = b(:,:,3) > REFL_TH;
-%     im_r = inRange(b, [RMAX 1 1], [RMIN 0.5 0.5]);
+%     im_r = b(:,:,3) > REFL_TH;
+    im_r = inRange(b, [RMAX 1 1], [RMIN 0.5 0.5]);
 
     trk_y_rd = (median(ind1_d(im_r)));
     trk_x_rd = (median(ind2_d(im_r)));

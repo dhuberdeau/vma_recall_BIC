@@ -1,9 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 AssertOpenGL;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
-screen_dims = [1920, 1080]; 
-res1 = 1280;%1280;%1920;
-res2 = 1024;%1024;%1080;
+% screen_dims = [1920, 1080]; 
+screen_dims = [3840 2160]; % for BIC setup
+res1 = 1920;%1280;%1280;%1920;
+res2 = 1080;%1024;%1024;%1080; % for BIC setup
 ind1 = repmat((1:res2)', 1, res1);
 ind2 = repmat((1:res1), res2, 1);
 DISC_SIZE = 1;
