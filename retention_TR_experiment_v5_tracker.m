@@ -8,32 +8,32 @@ AssertOpenGL;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 
 TEST_ROOM_CAMERA = 0;
-SKIP_TRIGS = 1;
+SKIP_TRIGS = 0;
 % for live scanning, set both of above to 0.
 
 if TEST_ROOM_CAMERA
     screen_dims = [1920, 1080];
 else
-%     screen_dims = [1920, 1080]; % MRRC
-    screen_dims = [3840, 2160]; %BIC
+    screen_dims = [1920, 1080];
+% screen_dims = [1600 900];
 end
 
 home_position = screen_dims/2;
-TARG_LEN = 600;
+TARG_LEN = 400;
 % targ_angles = 15+(0:60:300);
 targ_angles = 0:90:300;
-targ_coords_base = TARG_LEN*[cosd(targ_angles)', sind(targ_angles)'] ...
-    + repmat(home_position, length(targ_angles), 1);
+targ_coords_base = TARG_LEN*[cosd(targ_angles)', sind(targ_angles)'] + ...
+    repmat(home_position, 4, 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 if TEST_ROOM_CAMERA
     res1 = 1920;
     res2 = 1080;
 else
-%     res1 = 1280;
-%     res2 = 1024; %MRRC
     res1 = 1920;
-    res2 = 1080; %BIC 
+    res2 = 1080;
+%     res1 = 1280;
+%     res2 = 1024;
 end
 % res1 = 1920;
 % res2 = 1080;
@@ -41,14 +41,14 @@ if TEST_ROOM_CAMERA
     DISC_SIZE = 40;
 else
 %     DISC_SIZE = 32;
-    DISC_SIZE = 8;
+    DISC_SIZE = 4;
 end
 screen_dim1 = screen_dims(1);
 screen_dim2 = screen_dims(2);
 REFL_TH = .55;
 
-load('camera_params_BIC_cam');
-load('mm_per_pix_BIC_cam');
+load('camera_params');
+load('mm_per_pix');
 try
     load('camera_angle_calibration.mat');
     c_rr = cosd(angle_error);
@@ -57,23 +57,38 @@ try
 catch
     ROT_MAT = [1 0; 0 1];
 end
+% try to load in the file specifying a restricted field of view:
+% FOV = [(screen upper left horizontal, screen upper left vertical); 
+%        (horizontal extent of fov, vertical extent of fov)];
+try
+    load('tracker_field_of_view_calibration.mat');
+    fov_height_pix = 10/confirm_mm_conversion_fact; %desired height of fov in pixels
+    fov_width_pix = 20/confirm_mm_conversion_fact; %desired width of fov in pixels
+    fov_top_left_horizontal = mov_field_left_corner(1);
+    fov_top_left_vertical = mov_field_left_corner(2) - fov_height_pix;
+    CAM_FOV = [fov_top_left_horizontal, fov_top_left_vertical;...
+        fov_width_pix, fov_height_pix];
+    home_position_cam = CAM_FOV(1,:);
+catch
+    warning('FOV information not loaded')
+    CAM_FOV = [0 0; screen_dim1 screen_dim2];
+end
 
 ind1_d = repmat((1:DISC_SIZE:res2)', 1, res1/DISC_SIZE);
 ind2_d = repmat((1:DISC_SIZE:res1), res2/DISC_SIZE, 1);
-SUBWIN_SIZE = 150;
+SUBWIN_SIZE = 75;
 ind1 = repmat((1:res2)', 1, res1);
 ind2 = repmat((1:res1), res2, 1);
 
 RMIN = 0;
-% RMAX = .025;
-RMAX = 0.08;
+RMAX = .07;
 
 pre_alloc_samps = 36000; %enough for 10 minute blocks
 pre_alloc_trial = 60*60; %enough for 1 min.
-x = nan(1, 10000);                    
-y = nan(1, 10000);
-tim = nan(1, 10000);
-delays = nan(5,10000);
+x = nan(1, pre_alloc_samps);                    
+y = nan(1, pre_alloc_samps);
+tim = nan(1, pre_alloc_samps);
+delays = nan(5,pre_alloc_samps);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 
 %%
@@ -123,9 +138,9 @@ bubble_end_diam = TARG_LEN;
 bubble_expand_rate = 400;
 
 %% full session - ramped pPT
-SUB_NUM_ = 'dmh_test_01102019_';
+SUB_NUM_ = 'VMA002';
 % [trial_target_numbers_MASTER, trial_type_MASTER, prescribed_PT_MASTER, ret_MASTER, ITI_MASTER, stim_wait_MASTER] = generate_trial_table_E1retention_fMRI_v1(SUB_NUM_);
-load('trial_parameters_trial_params_jeff_pilot_08312018.mat')
+load('trial_parameters_VMA002.mat')
 trial_target_numbers_MASTER = trial_target_numbers;
 trial_type_MASTER = trial_type;
 prescribed_PT_MASTER = prescribed_PT;
@@ -137,10 +152,10 @@ screens=Screen('Screens');
 screenNumber=max(screens);
 [win, rect] = Screen('OpenWindow', screenNumber, 0); %[0 0 1600 900]);
 
-for block_num = 1
+for block_num = 5
     switch block_num
         case 1
-            this_trials = 1:4;
+            this_trials = 1:12;
             trial_type = trial_type_MASTER(this_trials);
             trial_target_numbers = trial_target_numbers_MASTER(this_trials);
             prescribed_PT = prescribed_PT_MASTER(this_trials);
@@ -197,7 +212,13 @@ for block_num = 1
     Data.ViewTime = nan(N_TRS, 1);
     Data.Kinematics = cell(N_TRS, 1);
     Data.Target = nan(N_TRS, 1);
-
+    Data.prestart_time = nan(N_TRS, 1);
+    Data.prehome_time = nan(N_TRS, 1);
+    Data.home_time = nan(N_TRS, 1);
+    Data.retention_time = nan(N_TRS, 1);
+    Data.TRstate_time = nan(N_TRS, 1);
+    Data.ITIstate_time = nan(N_TRS, 1);
+    
     %% initialize kinematics
     kinematics = nan(10000, 3);
     
@@ -334,7 +355,7 @@ for block_num = 1
                 if TEST_ROOM_CAMERA
                     im_r = inRange(b, [RMAX 1 1], [RMIN 0.5 0.5]);
                 else
-%                     im_r = b(:,:,3) > REFL_TH; %MRRC camera
+%                     im_r = b(:,:,3) > REFL_TH;
                     im_r = inRange(b, [RMAX 1 1], [RMIN 0.5 0.5]);
                 end
                 trk_y_rd = round(median(ind1_d(im_r)));
@@ -350,8 +371,7 @@ for block_num = 1
                     if TEST_ROOM_CAMERA
                         im_r = inRange(c_r, [.02 1 1], [0 0.5 0.5]);
                     else
-%                         im_r = c_r(:,:,3) > REFL_TH; 
-                        im_r = inRange(c_r, [RMAX 1 1], [RMIN 0.5 0.5]);
+                        im_r = c_r(:,:,3) > REFL_TH;
                     end
                     
                     rel_ind2 = ind2(max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]),max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]));
@@ -375,11 +395,33 @@ for block_num = 1
 %                     tim(k) = toc(exp_time);
                     tim(k) = GetSecs - exp_time;
                     if TEST_ROOM_CAMERA
-                        xr = calib_pts(1,1)*screen_dims(1)/res1;
+                        % translate to fov fractional coordinates:
+                        xr = calib_pts(1,1);
+                        yr = calib_pts(1,2);
+                        
+                        xr = (xr - CAM_FOV(1,1))/CAM_FOV(2,1);
+                        yr = (yr - CAM_FOV(1,2))/CAM_FOV(2,2);
+
+                        % translate to screen coordinates:
+                        xr = xr*screen_dim1;
+                        yr = yr*screen_dim2;
+                        %                         xr = calib_pts(1,1)*screen_dims(1)/res1;
                     else
-                        xr = (res1 - calib_pts(1,1))*screen_dims(1)/res1;
+                        % translate to fov fractional coordinates:
+                        xr = calib_pts(1,1);
+                        yr = calib_pts(1,2);
+                        
+%                         xr = ((CAM_FOV(1,1) + CAM_FOV(2,1)) - xr)/CAM_FOV(2,1);
+                        xr = (xr - CAM_FOV(1,1))/CAM_FOV(2,1);
+                        yr = (yr - CAM_FOV(1,2))/CAM_FOV(2,2);
+
+                        % translate to screen coordinates:
+                        xr = (1 - xr)*screen_dim1;
+                        yr = yr*screen_dim2;
+                        
+%                         xr = (res1 - calib_pts(1,1))*screen_dims(1)/res1;
                     end
-                    yr = calib_pts(1,2)*screen_dims(2)/res2;
+%                     yr = calib_pts(1,2)*screen_dims(2)/res2;
                 else
                     x(1,k) = nan;
                     y(1,k) = nan;
@@ -390,7 +432,9 @@ for block_num = 1
                 Screen('Close', tex);
                 delays(5,k)= toc(del_1);
                  %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
-
+                
+                 
+                 
                 kinematics(k_samp, :) = [GetSecs - exp_time, xr, yr];% translate to screen coordinates
                 Screen('FillOval', win, [cursor_color, screen_color_buff],...
                     [[kinematics(k_samp, 2:3), kinematics(k_samp, 2:3)]' + cursor_dims, ...
@@ -439,6 +483,7 @@ for block_num = 1
                             k_oval_buff = k_oval_buff + 1;
                             Data.pPT(i_tr) = prescribed_PT(i_tr);
                             Data.Type(i_tr) = trial_type(i_tr);
+                            Data.prestart_time(i_tr) = GetSecs - exp_time;
                             entrance = 0;
                         else
 %                             %%%%%%%  TR TRIGGERING
@@ -486,6 +531,7 @@ for block_num = 1
                         if entrance == 1
                             % first entrance into prehome state
                             prehome_start_time = toc(trial_time);
+                            Data.prehome_time(i_tr) = GetSecs - exp_time;
                             entrance = 0;
                         else
                             if (toc(trial_time) - prehome_start_time) < STIM_WAIT_TIME
@@ -501,6 +547,7 @@ for block_num = 1
                         if entrance == 1
                             % first entrance into home state
                             home_start_time = toc(trial_time);
+                            Data.home_time(i_tr) = GetSecs - exp_time;
                             switch trial_type(i_tr)
                                 case 4 % catch trial 
                                     rnd_ind = randperm(3);
@@ -625,6 +672,7 @@ for block_num = 1
                         if entrance == 1
                             % just entered state
                             retention_start_time = toc(trial_time);
+                            Data.retention_time(i_tr) = GetSecs - exp_time;
                             entrance = 0;
                         else
                             if (toc(trial_time) - retention_start_time) < RET_TIME
@@ -641,6 +689,7 @@ for block_num = 1
                             % just entered TR state
                             TR_state_time = toc(trial_time);
 %                             startTime = PsychPortAudio('Start', pahandle);
+                            Data.TRstate_time(i_tr) = GetSecs - exp_time;
                             target_shown = 0;
                             mov_begun = 0;
                             mov_ended = 0;
@@ -717,6 +766,7 @@ for block_num = 1
                     case 'ITI'
                         if entrance == 1
                             ITI_state_time = toc(trial_time);
+                            Data.ITIstate_time(i_tr) = GetSecs - exp_time;
                             draw_red_cursor_flag = 0;
                             if abs(Data.RT(i_tr)) >= TR_TOLERANCE && Data.RT(i_tr) >= 0
                                 % movement was earlier than "go" cue &
