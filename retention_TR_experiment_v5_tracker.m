@@ -1,5 +1,8 @@
 function varargout = retention_TR_experiment_v5_tracker(varargin)
 % Screen('Preference', 'SkipSyncTests', 1);
+% to make the introduction screen black:
+Screen('Preference', 'VisualDebugLevel', 1);
+
 %% Specify trial list
 % ultimately replace this section with code to load in a separately
 % prepared trial table file.
@@ -7,8 +10,8 @@ function varargout = retention_TR_experiment_v5_tracker(varargin)
 AssertOpenGL;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 
-TEST_ROOM_CAMERA = 0;
-SKIP_TRIGS = 0;
+TEST_ROOM_CAMERA = o;
+SKIP_TRIGS = 1;
 % for live scanning, set both of above to 0.
 
 if TEST_ROOM_CAMERA

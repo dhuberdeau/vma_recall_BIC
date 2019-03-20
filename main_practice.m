@@ -26,10 +26,10 @@ for i_im = 1:length(im_list)
                 home_position(1) + TEX_SIZE(1), home_position(2) + TEX_SIZE(2)]);
             
             Screen('Flip', win)
-            pause(1)
+%             pause(10)
             text_drawn = 1;
         end
-        pause(.15);
+        pause(.1);
     end
 end
 

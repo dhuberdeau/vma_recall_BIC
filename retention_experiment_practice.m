@@ -3,6 +3,8 @@ function varargout = retention_experiment_practice(varargin)
 % to make the introduction screen black:
 Screen('Preference', 'VisualDebugLevel', 1);
 
+addpath(genpath(pwd))
+
 %% Specify trial list
 % ultimately replace this section with code to load in a separately
 % prepared trial table file.
@@ -830,9 +832,9 @@ for block_num = 1
 %         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 %         sca;
-    catch
+    catch err1
         try
-            warning('An error occured')
+            warning(['An error occured: ', err1.message])
             Data.ViewTime = Data.pPT - Data.RT;
             Data.trig_TR_times = trig_TR_times_all;
             uniqueness_code = now*10000000000;
