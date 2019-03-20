@@ -138,9 +138,9 @@ bubble_end_diam = TARG_LEN;
 bubble_expand_rate = 400;
 
 %% full session - ramped pPT
-SUB_NUM_ = 'VMA002';
+SUB_NUM_ = 'VMA003';
 % [trial_target_numbers_MASTER, trial_type_MASTER, prescribed_PT_MASTER, ret_MASTER, ITI_MASTER, stim_wait_MASTER] = generate_trial_table_E1retention_fMRI_v1(SUB_NUM_);
-load('trial_parameters_VMA002.mat')
+load('trial_parameters_VMA003.mat')
 trial_target_numbers_MASTER = trial_target_numbers;
 trial_type_MASTER = trial_type;
 prescribed_PT_MASTER = prescribed_PT;
@@ -152,10 +152,10 @@ screens=Screen('Screens');
 screenNumber=max(screens);
 [win, rect] = Screen('OpenWindow', screenNumber, 0); %[0 0 1600 900]);
 
-for block_num = 5
+for block_num = 1
     switch block_num
         case 1
-            this_trials = 1:12;
+            this_trials = 1:24;
             trial_type = trial_type_MASTER(this_trials);
             trial_target_numbers = trial_target_numbers_MASTER(this_trials);
             prescribed_PT = prescribed_PT_MASTER(this_trials);
@@ -218,6 +218,7 @@ for block_num = 5
     Data.retention_time = nan(N_TRS, 1);
     Data.TRstate_time = nan(N_TRS, 1);
     Data.ITIstate_time = nan(N_TRS, 1);
+    Data.trig_TR_times = nan(1);
     
     %% initialize kinematics
     kinematics = nan(10000, 3);
@@ -817,6 +818,9 @@ for block_num = 5
                                         flip_offset_times(:)', zeros(1,10),...
                                         trig_TR_times_all(:)', zeros(1,10)];
                                 end
+                                % save out temporary file in case interupt
+                                Data.trig_TR_times = trig_TR_times_all;
+                                save([SUB_NUM_, '_trial_backup'], 'Data');
                                 state = 'end_state';
                             end
                         end
@@ -863,6 +867,7 @@ for block_num = 5
     end
     Data.ViewTime = Data.pPT - Data.RT;
     Data.x_track = x; Data.y_track = y; Data.t_track = tim;
+    Data.trig_TR_times = trig_TR_times_all;
     varargout = {1, [], Data, kinematics, delays};
     uniqueness_code = now*10000000000;
     save([SUB_NUM_, num2str(uniqueness_code)], 'Data');

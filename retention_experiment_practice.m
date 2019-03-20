@@ -1,5 +1,8 @@
 function varargout = retention_experiment_practice(varargin)
 % Screen('Preference', 'SkipSyncTests', 1);
+% to make the introduction screen black:
+Screen('Preference', 'VisualDebugLevel', 1);
+
 %% Specify trial list
 % ultimately replace this section with code to load in a separately
 % prepared trial table file.
@@ -27,8 +30,8 @@ targ_coords_base = TARG_LEN*[cosd(targ_angles)', sind(targ_angles)'] + ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 if TEST_ROOM_CAMERA
-    res1 = 1920;
-    res2 = 1080;
+    res1 = 1600;
+    res2 = 900;
 else
     res1 = 1920;
     res2 = 1080;
@@ -45,43 +48,27 @@ else
 end
 screen_dim1 = screen_dims(1);
 screen_dim2 = screen_dims(2);
-REFL_TH = .55;
-
-load('camera_params');
-load('mm_per_pix');
-try
-    load('camera_angle_calibration.mat');
-    c_rr = cosd(angle_error);
-    s_rr = sind(angle_error);
-    ROT_MAT = [c_rr s_rr; -s_rr c_rr];
-catch
-    ROT_MAT = [1 0; 0 1];
-end
-% try to load in the file specifying a restricted field of view:
-% FOV = [(screen upper left horizontal, screen upper left vertical); 
-%        (horizontal extent of fov, vertical extent of fov)];
-try
-    load('tracker_field_of_view_calibration.mat');
-    fov_height_pix = 10/confirm_mm_conversion_fact; %desired height of fov in pixels
-    fov_width_pix = 20/confirm_mm_conversion_fact; %desired width of fov in pixels
-    fov_top_left_horizontal = mov_field_left_corner(1);
-    fov_top_left_vertical = mov_field_left_corner(2) - fov_height_pix;
-    CAM_FOV = [fov_top_left_horizontal, fov_top_left_vertical;...
-        fov_width_pix, fov_height_pix];
-    home_position_cam = CAM_FOV(1,:);
-catch
-    warning('FOV information not loaded')
-    CAM_FOV = [0 0; screen_dim1 screen_dim2];
-end
-
-ind1_d = repmat((1:DISC_SIZE:res2)', 1, res1/DISC_SIZE);
-ind2_d = repmat((1:DISC_SIZE:res1), res2/DISC_SIZE, 1);
-SUBWIN_SIZE = 75;
-ind1 = repmat((1:res2)', 1, res1);
-ind2 = repmat((1:res1), res2, 1);
-
-RMIN = 0;
-RMAX = .07;
+% REFL_TH = .55;
+% 
+% load('camera_params');
+% load('mm_per_pix');
+% try
+%     load('camera_angle_calibration.mat');
+%     c_rr = cosd(angle_error);
+%     s_rr = sind(angle_error);
+%     ROT_MAT = [c_rr s_rr; -s_rr c_rr];
+% catch
+%     ROT_MAT = [1 0; 0 1];
+% end
+% 
+% ind1_d = repmat((1:DISC_SIZE:res2)', 1, res1/DISC_SIZE);
+% ind2_d = repmat((1:DISC_SIZE:res1), res2/DISC_SIZE, 1);
+% SUBWIN_SIZE = 75;
+% ind1 = repmat((1:res2)', 1, res1);
+% ind2 = repmat((1:res1), res2, 1);
+% 
+% RMIN = 0;
+% RMAX = .07;
 
 pre_alloc_samps = 36000; %enough for 10 minute blocks
 pre_alloc_trial = 60*60; %enough for 1 min.
@@ -138,9 +125,9 @@ bubble_end_diam = TARG_LEN;
 bubble_expand_rate = 400;
 
 %% full session - ramped pPT
-SUB_NUM_ = 'VMA002';
+SUB_NUM_ = 'VMA003';
 % [trial_target_numbers_MASTER, trial_type_MASTER, prescribed_PT_MASTER, ret_MASTER, ITI_MASTER, stim_wait_MASTER] = generate_trial_table_E1retention_fMRI_v1(SUB_NUM_);
-load('trial_parameters_VMA002.mat')
+load('trial_parameters_VMA003.mat')
 trial_target_numbers_MASTER = trial_target_numbers;
 trial_type_MASTER = trial_type;
 prescribed_PT_MASTER = prescribed_PT;
@@ -152,10 +139,10 @@ screens=Screen('Screens');
 screenNumber=max(screens);
 [win, rect] = Screen('OpenWindow', screenNumber, 0); %[0 0 1600 900]);
 
-for block_num = 5
+for block_num = 1
     switch block_num
         case 1
-            this_trials = 1:12;
+            this_trials = 1:24;
             trial_type = trial_type_MASTER(this_trials);
             trial_target_numbers = trial_target_numbers_MASTER(this_trials);
             prescribed_PT = prescribed_PT_MASTER(this_trials);
@@ -218,6 +205,7 @@ for block_num = 5
     Data.retention_time = nan(N_TRS, 1);
     Data.TRstate_time = nan(N_TRS, 1);
     Data.ITIstate_time = nan(N_TRS, 1);
+    Data.trig_TR_times = nan(1);
     
     %% initialize kinematics
     kinematics = nan(10000, 3);
@@ -280,8 +268,9 @@ for block_num = 5
         
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
-        grabber = Screen('OpenVideoCapture', win);
-        Screen('StartVideoCapture', grabber, 60, 1);
+%         grabber = Screen('OpenVideoCapture', win);
+%         Screen('StartVideoCapture', grabber, 60, 1);
+        joy = HebiJoystick(1);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 
 %         exp_time = tic;
@@ -341,100 +330,105 @@ for block_num = 5
                  %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
                 k = sum(~isnan(x(1,:)))+1;
                 del_1 = tic;
-                [tex, pts, nrdropped, imtext]=Screen('GetCapturedImage', win, grabber, 1, [], 2);
-                image_capture_time(k_samp) = pts - exp_time;
+                
+%                 [tex, pts, nrdropped, imtext]=Screen('GetCapturedImage', win, grabber, 1, [], 2);
+%                 image_capture_time(k_samp) = pts - exp_time;
                 delays(1,k) = toc(del_1);
-                del_1 = tic;
-    %             img = permute(imtext([3,2,1], :,:), [3,2,1]);
-                img_ = imtext(:, 1:DISC_SIZE:end, 1:DISC_SIZE:end);
-                img = permute(img_([3,2,1], :,:), [3,2,1]);
-                b = rgb2hsv(img);
-    %             b = (double(img_(:,:,1)) - mean(img_(:,:,[2:3]),3))./max(max(double(img_(:,:,1))));
-                delays(2,k) = toc(del_1);
-                del_1 = tic;
-                if TEST_ROOM_CAMERA
-                    im_r = inRange(b, [RMAX 1 1], [RMIN 0.5 0.5]);
-                else
-%                     im_r = b(:,:,3) > REFL_TH;
-                    im_r = inRange(b, [RMAX 1 1], [RMIN 0.5 0.5]);
-                end
-                trk_y_rd = round(median(ind1_d(im_r)));
-                trk_x_rd = round(median(ind2_d(im_r)));
-                delays(3,k) = toc(del_1);
-                del_1 = tic;
-                if ~isempty(trk_y_rd) && ~isempty(trk_x_rd)
-        %             img_ = imtext(:, max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]), max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]));
-                    img_ = imtext(:, max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]), max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]));
-                    img = permute(img_([3 2 1], :, :), [3 2 1]);
-        %             c_r = rgb2hsv(img(max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]), max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]), :));
-                    c_r = rgb2hsv(img);
-                    if TEST_ROOM_CAMERA
-                        im_r = inRange(c_r, [.02 1 1], [0 0.5 0.5]);
-                    else
-                        im_r = c_r(:,:,3) > REFL_TH;
-                    end
-                    
-                    rel_ind2 = ind2(max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]),max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]));
-                    rel_ind1 = ind1(max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]),max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]));
-                    trk_y_r = median(rel_ind1(im_r));
-                    trk_x_r = median(rel_ind2(im_r));
-                    delays(4,:) = toc(del_1);
-                    del_1 = tic;
-                    if ~isempty(trk_x_r) && ~isempty(trk_y_r)
-                        try
-                            calib_pts_ = undistortPoints([trk_x_r, trk_y_r], camera_params);
-                            calib_pts = (calib_pts_ - [res1, res2]/2)*ROT_MAT + [res1, res2]/2;
-                        catch
-                            calib_pts = nan(1,2);
-                        end
-                    else
-                        calib_pts = nan(1,2);
-                    end
-                    x(1,k) = calib_pts(1,1)*mm_pix;
-                    y(1,k) = calib_pts(1,2)*mm_pix;
+%                 del_1 = tic;
+%     %             img = permute(imtext([3,2,1], :,:), [3,2,1]);
+%                 img_ = imtext(:, 1:DISC_SIZE:end, 1:DISC_SIZE:end);
+%                 img = permute(img_([3,2,1], :,:), [3,2,1]);
+%                 b = rgb2hsv(img);
+%     %             b = (double(img_(:,:,1)) - mean(img_(:,:,[2:3]),3))./max(max(double(img_(:,:,1))));
+%                 delays(2,k) = toc(del_1);
+%                 del_1 = tic;
+%                 if TEST_ROOM_CAMERA
+%                     im_r = inRange(b, [RMAX 1 1], [RMIN 0.5 0.5]);
+%                 else
+% %                     im_r = b(:,:,3) > REFL_TH;
+%                     im_r = inRange(b, [RMAX 1 1], [RMIN 0.5 0.5]);
+%                 end
+%                 trk_y_rd = round(median(ind1_d(im_r)));
+%                 trk_x_rd = round(median(ind2_d(im_r)));
+%                 delays(3,k) = toc(del_1);
+%                 del_1 = tic;
+%                 if ~isempty(trk_y_rd) && ~isempty(trk_x_rd)
+%         %             img_ = imtext(:, max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]), max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]));
+%                     img_ = imtext(:, max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]), max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]));
+%                     img = permute(img_([3 2 1], :, :), [3 2 1]);
+%         %             c_r = rgb2hsv(img(max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]), max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]), :));
+%                     c_r = rgb2hsv(img);
+%                     if TEST_ROOM_CAMERA
+%                         im_r = inRange(c_r, [.02 1 1], [0 0.5 0.5]);
+%                     else
+%                         im_r = c_r(:,:,3) > REFL_TH;
+%                     end
+%                     
+%                     rel_ind2 = ind2(max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]),max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]));
+%                     rel_ind1 = ind1(max([(trk_y_rd - SUBWIN_SIZE),1]):min([(trk_y_rd + SUBWIN_SIZE),res2]),max([(trk_x_rd - SUBWIN_SIZE),1]):min([(trk_x_rd + SUBWIN_SIZE), res1]));
+%                     trk_y_r = median(rel_ind1(im_r));
+%                     trk_x_r = median(rel_ind2(im_r));
+%                     delays(4,:) = toc(del_1);
+%                     del_1 = tic;
+%                     if ~isempty(trk_x_r) && ~isempty(trk_y_r)
+%                         try
+%                             calib_pts_ = undistortPoints([trk_x_r, trk_y_r], camera_params);
+%                             calib_pts = (calib_pts_ - [res1, res2]/2)*ROT_MAT + [res1, res2]/2;
+%                         catch
+%                             calib_pts = nan(1,2);
+%                         end
+%                     else
+%                         calib_pts = nan(1,2);
+%                     end
+%                     x(1,k) = calib_pts(1,1)*mm_pix;
+%                     y(1,k) = calib_pts(1,2)*mm_pix;
+% %                     tim(k) = toc(exp_time);
+%                     tim(k) = GetSecs - exp_time;
+%                     if TEST_ROOM_CAMERA
+%                         % translate to fov fractional coordinates:
+%                         xr = calib_pts(1,1);
+%                         yr = calib_pts(1,2);
+%                         
+%                         xr = (xr - CAM_FOV(1,1))/CAM_FOV(2,1);
+%                         yr = (yr - CAM_FOV(1,2))/CAM_FOV(2,2);
+% 
+%                         % translate to screen coordinates:
+%                         xr = xr*screen_dim1;
+%                         yr = yr*screen_dim2;
+%                         %                         xr = calib_pts(1,1)*screen_dims(1)/res1;
+%                     else
+%                         % translate to fov fractional coordinates:
+%                         xr = calib_pts(1,1);
+%                         yr = calib_pts(1,2);
+%                         
+% %                         xr = ((CAM_FOV(1,1) + CAM_FOV(2,1)) - xr)/CAM_FOV(2,1);
+%                         xr = (xr - CAM_FOV(1,1))/CAM_FOV(2,1);
+%                         yr = (yr - CAM_FOV(1,2))/CAM_FOV(2,2);
+% 
+%                         % translate to screen coordinates:
+%                         xr = (1 - xr)*screen_dim1;
+%                         yr = yr*screen_dim2;
+%                         
+% %                         xr = (res1 - calib_pts(1,1))*screen_dims(1)/res1;
+%                     end
+% %                     yr = calib_pts(1,2)*screen_dims(2)/res2;
+%                 else
+%                     x(1,k) = nan;
+%                     y(1,k) = nan;
 %                     tim(k) = toc(exp_time);
-                    tim(k) = GetSecs - exp_time;
-                    if TEST_ROOM_CAMERA
-                        % translate to fov fractional coordinates:
-                        xr = calib_pts(1,1);
-                        yr = calib_pts(1,2);
-                        
-                        xr = (xr - CAM_FOV(1,1))/CAM_FOV(2,1);
-                        yr = (yr - CAM_FOV(1,2))/CAM_FOV(2,2);
-
-                        % translate to screen coordinates:
-                        xr = xr*screen_dim1;
-                        yr = yr*screen_dim2;
-                        %                         xr = calib_pts(1,1)*screen_dims(1)/res1;
-                    else
-                        % translate to fov fractional coordinates:
-                        xr = calib_pts(1,1);
-                        yr = calib_pts(1,2);
-                        
-%                         xr = ((CAM_FOV(1,1) + CAM_FOV(2,1)) - xr)/CAM_FOV(2,1);
-                        xr = (xr - CAM_FOV(1,1))/CAM_FOV(2,1);
-                        yr = (yr - CAM_FOV(1,2))/CAM_FOV(2,2);
-
-                        % translate to screen coordinates:
-                        xr = (1 - xr)*screen_dim1;
-                        yr = yr*screen_dim2;
-                        
-%                         xr = (res1 - calib_pts(1,1))*screen_dims(1)/res1;
-                    end
-%                     yr = calib_pts(1,2)*screen_dims(2)/res2;
-                else
-                    x(1,k) = nan;
-                    y(1,k) = nan;
-                    tim(k) = toc(exp_time);
-                    xr = nan;
-                    yr = nan;
-                end
-                Screen('Close', tex);
+%                     xr = nan;
+%                     yr = nan;
+%                 end
+%                 Screen('Close', tex);
+                joy_position = read(joy);
+                xr = joy_position(1)*screen_dims(1)/2 + screen_dims(1)/2;
+                yr = -joy_position(2)*screen_dims(2)/2 + screen_dims(2)/2;
+                x(1,k) = joy_position(1);
+                y(1,k) = joy_position(2);
                 delays(5,k)= toc(del_1);
                  %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
                 
-                 
-                 
+                
                 kinematics(k_samp, :) = [GetSecs - exp_time, xr, yr];% translate to screen coordinates
                 Screen('FillOval', win, [cursor_color, screen_color_buff],...
                     [[kinematics(k_samp, 2:3), kinematics(k_samp, 2:3)]' + cursor_dims, ...
@@ -817,6 +811,9 @@ for block_num = 5
                                         flip_offset_times(:)', zeros(1,10),...
                                         trig_TR_times_all(:)', zeros(1,10)];
                                 end
+                                % save out temporary file in case interupt
+                                Data.trig_TR_times = trig_TR_times_all;
+                                save([SUB_NUM_, '_trial_backup'], 'Data');
                                 state = 'end_state';
                             end
                         end
@@ -827,30 +824,31 @@ for block_num = 5
             end
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
-        if exist('grabber')
-                Screen('StopVideoCapture', grabber);
-                Screen('CloseVideoCapture', grabber);
-        end
+%         if exist('grabber')
+%                 Screen('StopVideoCapture', grabber);
+%                 Screen('CloseVideoCapture', grabber);
+%         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
 %         sca;
     catch
         try
             warning('An error occured')
             Data.ViewTime = Data.pPT - Data.RT;
+            Data.trig_TR_times = trig_TR_times_all;
             uniqueness_code = now*10000000000;
             save([SUB_NUM_, num2str(uniqueness_code)], 'Data');
             varargout = {0, lasterror, Data, kinematics, delays};
             %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
-            Screen('StopVideoCapture', grabber);
-            Screen('CloseVideoCapture', grabber);
+%             Screen('StopVideoCapture', grabber);
+%             Screen('CloseVideoCapture', grabber);
             %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
             sca;
             return
         catch
             try
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
-                Screen('StopVideoCapture', grabber);
-                Screen('CloseVideoCapture', grabber);
+%                 Screen('StopVideoCapture', grabber);
+%                 Screen('CloseVideoCapture', grabber);
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%% CAMERA KAPTURE
                 sca
                 return
@@ -863,8 +861,8 @@ for block_num = 5
     end
     Data.ViewTime = Data.pPT - Data.RT;
     Data.x_track = x; Data.y_track = y; Data.t_track = tim;
+    Data.trig_TR_times = trig_TR_times_all;
     varargout = {1, [], Data, kinematics, delays};
-    uniqueness_code = now*10000000000;
     save([SUB_NUM_, num2str(uniqueness_code)], 'Data');
     
     %% between blocks break
