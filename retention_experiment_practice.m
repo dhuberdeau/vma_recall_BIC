@@ -125,9 +125,9 @@ bubble_end_diam = TARG_LEN;
 bubble_expand_rate = 400;
 
 %% full session - ramped pPT
-SUB_NUM_ = 'VMA003';
+SUB_NUM_ = 'VMA000';
 % [trial_target_numbers_MASTER, trial_type_MASTER, prescribed_PT_MASTER, ret_MASTER, ITI_MASTER, stim_wait_MASTER] = generate_trial_table_E1retention_fMRI_v1(SUB_NUM_);
-load('trial_parameters_VMA003.mat')
+load('trial_parameters_VMA000.mat')
 trial_target_numbers_MASTER = trial_target_numbers;
 trial_type_MASTER = trial_type;
 prescribed_PT_MASTER = prescribed_PT;
@@ -422,7 +422,7 @@ for block_num = 1
 %                 Screen('Close', tex);
                 joy_position = read(joy);
                 xr = joy_position(1)*screen_dims(1)/2 + screen_dims(1)/2;
-                yr = -joy_position(2)*screen_dims(2)/2 + screen_dims(2)/2;
+                yr = joy_position(2)*screen_dims(2)/2 + screen_dims(2)/2;
                 x(1,k) = joy_position(1);
                 y(1,k) = joy_position(2);
                 delays(5,k)= toc(del_1);
