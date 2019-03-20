@@ -1,14 +1,16 @@
+Screen('Preference', 'SkipSyncTests', 1);
+
 screens=Screen('Screens');
 screenNumber=max(screens);
 [win, rect] = Screen('OpenWindow', screenNumber, 0); %[0 0 1600 900]);
 
 screen_dims = [1600, 900];
 home_position = screen_dims/2;
-TEX_SIZE = [600, 400];
+TEX_SIZE = [720, 400];
 
 im_list = cell(1,5);
 for i_im = 1:length(im_list)
-    im_list{i_im} = imread(['instructions_pic_', num2str(i_im), '.png']);
+    im_list{i_im} = imread(['instruction_pic_', num2str(i_im), '.png']);
 end
 
 for i_im = 1:length(im_list)

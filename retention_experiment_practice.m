@@ -1,5 +1,5 @@
 function varargout = retention_experiment_practice(varargin)
-% Screen('Preference', 'SkipSyncTests', 1);
+Screen('Preference', 'SkipSyncTests', 1);
 % to make the introduction screen black:
 Screen('Preference', 'VisualDebugLevel', 1);
 
